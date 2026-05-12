@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 🔓 TEMPORARY TROUBLESHOOTING MODE: Full Public Access
+    // WARNING: This allows anyone to read or delete your data. 
+    // We will restore security after confirming the system works.
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
