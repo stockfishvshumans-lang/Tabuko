@@ -116,23 +116,52 @@ const UI = (() => {
             <div class="header-sub-brand">Console</div>
           </div>
           <nav class="sidebar-mid">${navLinks}</nav>
-          <div class="sidebar-bottom">
-            <div id="network-manager-ui" class="network-manager-block">
-              <div class="network-header">
-                <span id="sync-status-icon">☁️</span>
-                <span id="sync-status-text">Synchronizing...</span>
+          <div class="sidebar-bottom" style="padding: 1.5rem; background: var(--bg-sidebar); border-top: 1px solid var(--border-color);">
+            
+            <!-- SMART STATUS & IDENTITY ROW -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+              
+              <!-- SMART STATUS ORB -->
+              <div class="status-orb-wrap" style="position: relative; cursor: help;">
+                <div id="system-status-orb" class="system-status-orb" style="width: 12px; height: 12px; border-radius: 50%; background: #475569; transition: 0.3s; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>
+                
+                <!-- GLASSMORPHIC TOOLTIP -->
+                <div id="status-tooltip" style="position: absolute; bottom: 30px; left: 0; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(255,255,255,0.1); padding: 0.75rem; border-radius: 12px; width: 220px; font-size: 0.7rem; backdrop-filter: blur(12px); visibility: hidden; opacity: 0; transition: 0.2s; z-index: 1000; box-shadow: var(--shadow-lg);">
+                   <div style="font-weight: 800; color: #fff; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px;">System Health</div>
+                   <div id="tooltip-sync-text" style="color: var(--text-secondary);">Initializing system...</div>
+                   <div id="tooltip-auth-text" style="color: var(--accent-sapphire); margin-top: 2px;">Authority: Resolving...</div>
+                </div>
               </div>
-              <div class="network-health-bar">
-                <div id="network-health-fill" class="health-fill" style="width: 100%;"></div>
+
+              <!-- LIVE BADGE & MONOGRAM MERGE -->
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span id="live-indicator-mini" style="font-size: 0.6rem; font-weight: 900; color: var(--accent-success); border: 1px solid var(--accent-success); padding: 2px 6px; border-radius: 4px; letter-spacing: 1px; display: none;">LIVE</span>
+                <div class="user-monogram-avatar" style="width: 28px; height: 28px; border-radius: 50%; background: var(--bg-tertiary); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-weight: 900; color: var(--accent-primary); font-size: 0.75rem;">
+                   ${(user?.email || 'G').charAt(0).toUpperCase()}
+                </div>
               </div>
-              <div class="device-info">Arbiter Console Active</div>
-              <div id="authority-status" class="device-info" style="margin-top: 4px; color: var(--accent-sapphire);">Authority: Checking...</div>
             </div>
-            <div class="user-identity-block">
-              <span class="user-account-name">${Auth.isGuest() ? 'Guest' : user?.email?.split('@')[0]}</span>
-              <span class="online-status-badge ${isOnline ? 'online' : 'offline'}">${isOnline ? 'LIVE' : 'OFFLINE'}</span>
+
+            <!-- USER PROFILE PILL -->
+            <div class="user-profile-pill" style="margin-bottom: 1.25rem;">
+              <div style="font-size: 0.85rem; font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${Auth.isGuest() ? 'Guest Spectator' : (user?.email?.split('@')[0] || 'Arbiter')}
+              </div>
+              <div style="font-size: 0.65rem; font-weight: 600; color: var(--text-muted); text-transform: lowercase;">
+                ${user?.email || 'unauthenticated session'}
+              </div>
             </div>
-            <div id="btn-signout" class="nav-item signout-item" onclick="Auth.signOut()">🚪 Sign Out</div>
+
+            <div id="btn-signout" class="nav-item signout-item" onclick="Auth.signOut()" style="padding: 0.6rem; font-size: 0.75rem; justify-content: center; border-radius: 8px;">🚪 Sign Out</div>
+            
+            <style>
+              .status-orb-wrap:hover #status-tooltip { visibility: visible; opacity: 1; bottom: 35px; }
+              .orb-pulse-green { animation: orb-pulse 2s infinite; background: var(--accent-success) !important; box-shadow: 0 0 15px var(--accent-success) !important; }
+              .orb-solid-amber { background: var(--accent-warning) !important; box-shadow: 0 0 10px var(--accent-warning) !important; }
+              .orb-blink-red { animation: orb-blink 1s infinite; background: var(--accent-danger) !important; }
+              @keyframes orb-pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
+              @keyframes orb-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+            </style>
           </div>
         </aside>
 
@@ -1187,8 +1216,28 @@ const UI = (() => {
                 </td>
               </tr>
             ` : ''}
-            ${matches.map((m, idx) => {
+            ${(await Promise.all(matches.map(async (m, idx) => {
               const isResolved = m.isResolved || false;
+              
+              // Pre-calculate board rows HTML
+              const boardRows = [];
+              for (const b of (m.boards || [])) {
+                const white = await IdentityResolution.resolvePlayer(tournament.id, m.homeTeamId, b.whiteId, b.whiteName, b.boardNumber, playerMap, fullTeams[m.homeTeamId]);
+                const black = await IdentityResolution.resolvePlayer(tournament.id, m.awayTeamId, b.blackId, b.blackName, b.boardNumber, playerMap, fullTeams[m.awayTeamId]);
+                
+                let resText = b.result || b.rawResult || '-';
+                if (resText === '0.5-0.5') resText = '½ - ½';
+
+                boardRows.push(`
+                  <tr>
+                    <td class="text-center" style="font-weight: 800; color: #475569;">${b.boardNumber}</td>
+                    <td class="text-right" style="width: 35%; color: #f8fafc; font-weight: 600;">${white.name}</td>
+                    <td class="text-center"><span class="result-pill ${resText !== '-' ? 'result-win' : 'result-pending'}">${resText}</span></td>
+                    <td class="text-left" style="width: 35%; color: #f8fafc; font-weight: 600;">${black.name}</td>
+                  </tr>
+                `);
+              }
+
               return `
                 <tr class="team-match-row">
                   <td style="padding: 1rem; color: #64748b; font-weight: 800;">${m.matchNumber || idx + 1}</td>
@@ -1213,32 +1262,13 @@ const UI = (() => {
                         <tr><th>Bd</th><th class="text-right">White Player</th><th class="text-center">Result</th><th class="text-left">Black Player</th></tr>
                       </thead>
                       <tbody>
-                        ${await (async () => {
-                          const rows = [];
-                          for (const b of (m.boards || [])) {
-                            const white = await IdentityResolution.resolvePlayer(tournament.id, m.homeTeamId, b.whiteId, b.whiteName, b.boardNumber, playerMap, fullTeams[m.homeTeamId]);
-                            const black = await IdentityResolution.resolvePlayer(tournament.id, m.awayTeamId, b.blackId, b.blackName, b.boardNumber, playerMap, fullTeams[m.awayTeamId]);
-                            
-                            let resText = b.result || b.rawResult || '-';
-                            if (resText === '0.5-0.5') resText = '½ - ½';
-
-                            rows.push(`
-                              <tr>
-                                <td class="text-center" style="font-weight: 800; color: #475569;">${b.boardNumber}</td>
-                                <td class="text-right" style="width: 35%; color: #f8fafc; font-weight: 600;">${white.name}</td>
-                                <td class="text-center"><span class="result-pill ${resText !== '-' ? 'result-win' : 'result-pending'}">${resText}</span></td>
-                                <td class="text-left" style="width: 35%; color: #f8fafc; font-weight: 600;">${black.name}</td>
-                              </tr>
-                            `);
-                          }
-                          return rows.join('');
-                        })()}
+                        ${boardRows.join('')}
                       </tbody>
                     </table>
                   </td>
                 </tr>
               `;
-            }).join('')}
+            }))).join('')}
           </tbody>
         </table>
       </div>
@@ -1462,13 +1492,13 @@ const UI = (() => {
       });
     });
 
-    el.querySelectorAll('.rejoin-player').forEach(btn => {
+    for (const btn of el.querySelectorAll('.rejoin-player')) {
       btn.addEventListener('click', async () => {
         await db.collection('tournaments').doc(tournament.id).collection('playerData').doc(btn.dataset.id).update({ withdrawn: false });
         showToast('Player rejoined', 'success');
         renderTournamentTab('players', tournament);
       });
-    });
+    }
 
     el.querySelectorAll('.delete-tp').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -2888,14 +2918,14 @@ const UI = (() => {
             };
           }
 
-          document.querySelectorAll('.edit-member').forEach(btn => {
+          for (const btn of document.querySelectorAll('.edit-member')) {
             btn.addEventListener('click', async () => {
               const m = await ClubMembers.getMember(btn.dataset.id);
               UI.renderMemberModal(m);
             });
-          });
+          }
 
-          document.querySelectorAll('.delete-member').forEach(btn => {
+          for (const btn of document.querySelectorAll('.delete-member')) {
             btn.addEventListener('click', async () => {
               const m = await ClubMembers.getMember(btn.dataset.id);
               if (!confirm(`Are you sure you want to remove ${m.name}?`)) return;
@@ -2908,7 +2938,7 @@ const UI = (() => {
               } catch (err) { showToast(err.message, 'error'); }
               finally { hideLoading(); }
             });
-          });
+          }
         }
 
         // ── SETTINGS PAGE ──
@@ -4297,7 +4327,7 @@ function renderResultModal(tournamentId, roundNumber, board, whiteName, blackNam
                       <div style="font-size: 0.65rem; color: #64748b;">ELO ${white.rating}</div>
                     </div>
                     <div style="display: flex; justify-content: center;">
-                      <select class="scoreboard-select" data-board="${b.boardNumber}" onchange="syncLiveScoreboard(this)" style="width: 100%; background: #000; border: 2px solid #334155; color: #fbbf24; border-radius: 12px; padding: 0.75rem; font-weight: 900; text-align: center; cursor: pointer; outline: none;">
+                      <select class="scoreboard-select" data-board="${b.boardNumber}" onchange="window.syncLiveScoreboard(this)" style="width: 100%; background: #000; border: 2px solid #334155; color: #fbbf24; border-radius: 12px; padding: 0.75rem; font-weight: 900; text-align: center; cursor: pointer; outline: none;">
                         <option value="">PENDING</option>
                         <option value="1-0" ${currentRes === '1-0' ? 'selected' : ''}>1 - 0</option>
                         <option value="0.5-0.5" ${currentRes === '0.5-0.5' ? 'selected' : ''}>½ - ½</option>
@@ -4321,7 +4351,7 @@ function renderResultModal(tournamentId, roundNumber, board, whiteName, blackNam
 
         <div style="padding: 2.5rem; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(255,255,255,0.05); display: flex; gap: 1.5rem;">
           <button onclick="this.closest('.modal-overlay').remove()" style="flex: 1; background: transparent; border: 1.5px solid #1e293b; color: #64748b; padding: 1.25rem; border-radius: 16px; font-weight: 800; cursor: pointer;">Abort</button>
-          <button id="btn-lock-results" disabled style="flex: 2; background: #2563eb; color: #fff; border: none; padding: 1.25rem; border-radius: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; cursor: pointer;">Lock Match Results</button>
+          <button id="btn-lock-results" disabled style="flex: 2; background: #2563eb; color: #fff; border: none; padding: 1.25rem; border-radius: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; cursor: not-allowed; opacity: 0.5; filter: grayscale(1); transition: all 0.3s;">Lock Match Results</button>
         </div>
       </div>
     `;
@@ -4332,38 +4362,38 @@ function renderResultModal(tournamentId, roundNumber, board, whiteName, blackNam
 
     document.getElementById('btn-lock-results').addEventListener('click', async () => {
       const selects = overlay.querySelectorAll('.scoreboard-select');
-      const operations = [];
+      const boardResults = [];
 
+      // Collect all board results and compute total BP
+      let t1BP = 0, t2BP = 0;
       for (const sel of selects) {
-        const val = sel.value;
+        const val = sel.value.trim();
         if (!val) continue;
-        operations.push({
-          type: 'SUBMIT_RESULT',
-          payload: { tournamentId, roundNumber: roundNum, matchNumber, boardNumber: parseInt(sel.dataset.board), result: val }
-        });
+
+        boardResults.push({ boardNum: parseInt(sel.dataset.board), result: val });
+
+        if (val === '1-0' || val === '1-0F') t1BP += 1;
+        else if (val === '0-1' || val === '0-1F') t2BP += 1;
+        else if (val === '0.5-0.5') { t1BP += 0.5; t2BP += 0.5; }
+        // 0-0F: no points
+      }
+
+      if (boardResults.length === 0) {
+        showToast('No results to submit.', 'warning');
+        return;
       }
 
       try {
-        showLoading("Dispatching to Queue...");
-        if (window.OperationsQueue) {
-          await Promise.all(operations.map(op => window.OperationsQueue.push(op.type, op.payload)));
-          // Wait for event loop to clear and state to settle
-          await new Promise(r => setTimeout(r, 800));
-        } else {
-          // Robust Fallback
-          let t1BP = 0, t2BP = 0;
-          operations.forEach(op => {
-            const val = op.payload.result;
-            if (val === '1-0' || val === '1-0F') t1BP += 1;
-            else if (val === '0-1' || val === '0-1F') t2BP += 1;
-            else if (val === '0.5-0.5') { t1BP += 0.5; t2BP += 0.5; }
-          });
-          await Tournament.submitTeamResult(tournamentId, roundNum, matchNumber, 
-            operations.map(o => ({ boardNum: o.payload.boardNumber, result: o.payload.result })), 
-            t1BP, t2BP);
-        }
+        showLoading("Locking match results...");
+        
+        // DIRECT PATH: Use DB.saveTeamMatchResult for atomic team result submission.
+        // This ONLY updates the round document — it does NOT trigger finalization.
+        await DB.saveTeamMatchResult(tournamentId, roundNum, matchNumber, boardResults, t1BP, t2BP);
+        
+        // Recalculate standings after saving
+        await Tournament.recalculateStandings(tournamentId);
 
-        showToast('Results sealed in operations log.', 'success');
+        showToast(`Match results locked. Score: ${t1BP} - ${t2BP}`, 'success');
         overlay.remove();
         const fresh = await DB.getTournament(tournamentId);
         UI.renderTournamentView(fresh);
@@ -4377,52 +4407,75 @@ function renderResultModal(tournamentId, roundNumber, board, whiteName, blackNam
 
   /**
    * syncLiveScoreboard: Updates the match score badge in real-time.
+   * Globally exposed via window.syncLiveScoreboard for inline onchange handlers.
    */
   function syncLiveScoreboard(triggeredSelect) {
     const overlay = document.querySelector('.modal-overlay.active');
     if (!overlay) return;
 
-    console.log("🔄 [Scoreboard Sync] Triggered. Checking all boards...");
-
     const selects = overlay.querySelectorAll('.scoreboard-select');
+    if (!selects || selects.length === 0) return;
+
     let t1BP = 0, t2BP = 0;
     let allFilled = true;
+    const validResults = ['1-0', '0-1', '0.5-0.5', '1-0F', '0-1F', '0-0F'];
 
-    selects.forEach(sel => {
-      const val = sel.value;
-      if (!val) allFilled = false;
+    for (const sel of selects) {
+      const val = sel.value.trim();
 
-      // Real-time styling based on result
-      if (val.startsWith('1-0')) sel.style.borderColor = 'var(--hub-accent)';
-      else if (val.startsWith('0-1')) sel.style.borderColor = 'var(--hub-danger)';
-      else if (val === '0.5-0.5') sel.style.borderColor = 'var(--hub-sapphire)';
-      else sel.style.borderColor = 'rgba(255,255,255,0.1)';
+      // Check if this board has a valid result selected
+      if (!val || !validResults.includes(val)) {
+        allFilled = false;
+      }
 
-      if (val === '1-0' || val === '1-0F') t1BP += 1;
-      else if (val === '0-1' || val === '0-1F') t2BP += 1;
-      else if (val === '0.5-0.5') { t1BP += 0.5; t2BP += 0.5; }
-    });
+      // Real-time border styling based on result
+      if (val === '1-0' || val === '1-0F') {
+        sel.style.borderColor = '#81b64c';
+        t1BP += 1;
+      } else if (val === '0-1' || val === '0-1F') {
+        sel.style.borderColor = '#f43f5e';
+        t2BP += 1;
+      } else if (val === '0.5-0.5') {
+        sel.style.borderColor = '#38bdf8';
+        t1BP += 0.5;
+        t2BP += 0.5;
+      } else if (val === '0-0F') {
+        sel.style.borderColor = '#f59e0b';
+        // 0-0 Forfeit: no points awarded
+      } else {
+        sel.style.borderColor = 'rgba(255,255,255,0.1)';
+      }
+    }
 
+    // Update the live scoreboard badge
     const homeBpEl = overlay.querySelector('#home-bp-live');
     const awayBpEl = overlay.querySelector('#away-bp-live');
     if (homeBpEl) homeBpEl.textContent = t1BP.toFixed(1);
     if (awayBpEl) awayBpEl.textContent = t2BP.toFixed(1);
 
-    const lockBtn = document.getElementById('btn-lock-results');
+    // Enable/Disable the Lock button based on all boards filled
+    const lockBtn = overlay.querySelector('#btn-lock-results');
     if (lockBtn) {
-      if (allFilled) {
+      if (allFilled && selects.length > 0) {
         lockBtn.disabled = false;
         lockBtn.style.opacity = '1';
         lockBtn.style.cursor = 'pointer';
         lockBtn.style.filter = 'none';
+        lockBtn.style.background = '#2563eb';
+        lockBtn.style.boxShadow = '0 0 20px rgba(37, 99, 235, 0.3)';
       } else {
         lockBtn.disabled = true;
         lockBtn.style.opacity = '0.5';
         lockBtn.style.cursor = 'not-allowed';
         lockBtn.style.filter = 'grayscale(1)';
+        lockBtn.style.background = '#2563eb';
+        lockBtn.style.boxShadow = 'none';
       }
     }
   }
+
+  // CRITICAL: Expose globally so inline onchange="window.syncLiveScoreboard(this)" works
+  window.syncLiveScoreboard = syncLiveScoreboard;
 
         /**
          * FEATURE: Contact Us / Support Modal
@@ -5117,38 +5170,43 @@ function renderResultModal(tournamentId, roundNumber, board, whiteName, blackNam
     renderTeamPairings, exportTournamentTRF, syncLiveScoreboard
   };
 
-  // ── NETWORK HEALTH LISTENER ──
+  // ── REFACTORED NETWORK HEALTH LISTENER ──
   window.addEventListener('tournament_health_update', (e) => {
-    const { pendingCount, isOnline } = e.detail;
-    const statusText = document.getElementById('sync-status-text');
-    const statusIcon = document.getElementById('sync-status-icon');
-    const healthFill = document.getElementById('network-health-fill');
+    const { pendingCount, isOnline, role, error } = e.detail;
+    const orb = document.getElementById('system-status-orb');
+    const liveIndicator = document.getElementById('live-indicator-mini');
+    const tSync = document.getElementById('tooltip-sync-text');
+    const tAuth = document.getElementById('tooltip-auth-text');
+
+    if (!orb) return;
+
+    // Reset classes
+    orb.className = 'system-status-orb';
+    if (liveIndicator) liveIndicator.style.display = isOnline ? 'block' : 'none';
+
+    // 1. Logic-to-Orb Mapping
+    if (error) {
+      orb.classList.add('orb-blink-red');
+      if (tSync) tSync.textContent = "Connectivity / Permission Error";
+    } else if (!isOnline) {
+      orb.classList.add('orb-solid-amber');
+      if (tSync) tSync.textContent = `Offline Mode: ${pendingCount} updates queued`;
+    } else {
+      orb.classList.add('orb-pulse-green');
+      if (tSync) tSync.textContent = pendingCount > 0 ? `Synchronising ${pendingCount} updates...` : "System Fully Synced";
+    }
+
+    // 2. Auth Level Mapping
+    if (tAuth) {
+      const labels = { lead: 'Primary Authority', assistant: 'Secondary Arbiter', staff: 'Staff Observer' };
+      tAuth.textContent = `Arbiter: ${labels[role] || 'Authorising...'}`;
+    }
+
+    // Update Dashboard Health if present
     const dashHealth = document.getElementById('dashboard-health-score');
-
-    if (statusText) {
-      if (pendingCount > 0) {
-        statusText.textContent = `${pendingCount} Ops Pending`;
-        statusIcon.textContent = '⏳';
-      } else {
-        statusText.textContent = isOnline ? 'Fully Synced' : 'Offline Ready';
-        statusIcon.textContent = isOnline ? '☁️' : '💾';
-      }
-    }
-
-    const health = pendingCount > 0 ? Math.max(10, 100 - (pendingCount * 5)) : 100;
-    if (healthFill) healthFill.style.width = `${health}%`;
-    if (dashHealth) dashHealth.textContent = `${health}%`;
-
-    const identity = document.getElementById('device-identity');
-    if (identity && e.detail.engineVersion) {
-      identity.textContent = `Device: ${e.detail.deviceId} | v${e.detail.engineVersion}`;
-    }
-
-    const authEl = document.getElementById('authority-status');
-    if (authEl) {
-      const roles = { 3: 'Primary (Lead)', 2: 'Secondary (Asst)', 1: 'Staff' };
-      const roleLvl = e.detail.role === 'lead' ? 3 : (e.detail.role === 'assistant' ? 2 : 1);
-      authEl.textContent = `Authority: ${roles[roleLvl]}`;
+    if (dashHealth) {
+      const health = pendingCount > 0 ? Math.max(10, 100 - (pendingCount * 5)) : 100;
+      dashHealth.textContent = `${health}%`;
     }
   });
 
