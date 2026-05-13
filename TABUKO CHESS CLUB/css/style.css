@@ -2895,8 +2895,9 @@ body {
 }
 
 /* ── MAIN CONTENT AREA ── */
-.main-viewport {
+.main-viewport.main {
   margin-left: var(--sidebar-width);
+  padding: 1.5rem;
   min-height: 100vh;
   background: var(--bg-app);
   display: flex;
@@ -2906,7 +2907,7 @@ body {
 }
 
 .content-viewport {
-  padding: 2rem;
+  padding: 0;
   flex: 1;
   min-height: min-content;
 }
@@ -3183,6 +3184,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: 0;
   margin-bottom: 3.5rem;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -3988,4 +3990,461 @@ body {
   font-size: 10px;
   font-weight: 900;
   color: black;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE ARCHITECTURE — MASTER OVERRIDE BLOCK
+   Priority: Last in cascade = highest authority.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. GLOBAL DESKTOP SCALING (The 67% High-Density Effect) ── */
+:root {
+  --sidebar-width: 220px;
+  --header-height: 56px;
+  --fs-h1: 1.6rem;
+  --fs-h2: 1.2rem;
+  --fs-h3: 1rem;
+  --fs-body: 0.875rem;
+  --fs-sm: 0.75rem;
+  --fs-xs: 0.65rem;
+  --fs-stats: 1.75rem;
+  --min-target: 36px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+html {
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+  height: auto;
+  overflow-y: auto;
+}
+
+body {
+  font-size: var(--fs-body);
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  height: auto;
+  min-height: 100vh;
+}
+
+h1 { font-size: var(--fs-h1); margin-bottom: 0.25rem; }
+h2 { font-size: var(--fs-h2); }
+h3 { font-size: var(--fs-h3); }
+
+.sidebar {
+  width: var(--sidebar-width);
+}
+
+.main, .main-viewport {
+  margin-left: var(--sidebar-width);
+}
+
+.card { padding: 1.25rem; }
+.stat-card { padding: 1rem; }
+.stat-value { font-size: var(--fs-stats); }
+.stats-grid { gap: 1rem; margin-bottom: 1.5rem; }
+.btn { height: 36px; padding: 0 1.25rem; font-size: var(--fs-sm); }
+.btn-sm { height: 30px; padding: 0 0.75rem; font-size: var(--fs-xs); }
+th { padding: 0.75rem 1rem; font-size: var(--fs-xs); }
+td { padding: 0.75rem 1rem; font-size: var(--fs-sm); }
+.form-input, .auth-input { height: 40px; font-size: var(--fs-sm); }
+.badge { padding: 4px 10px; font-size: var(--fs-xs); }
+.nav-item { padding: 0.6rem 0.85rem; font-size: var(--fs-sm); gap: 0.85rem; }
+.brand { margin-bottom: 2rem; }
+.brand-name { font-size: 1.35rem; }
+.brand-icon { font-size: 1.75rem; }
+.nav-group { margin-bottom: 1.75rem; }
+.modal-header { padding: 1.25rem 1.5rem; }
+.modal-footer { padding: 1rem 1.5rem; }
+.form-group { margin-bottom: 1.25rem; }
+.tournament-header-rail { min-height: var(--header-height); padding: 8px 20px; }
+.header-page-title { font-size: 1.75rem; }
+.content-viewport { padding: 1.5rem; }
+.tournament-viewport-fill { padding: 16px; }
+.dashboard-header { margin-bottom: 2rem; }
+
+/* ── 2. MODAL VERTICAL SQUEEZE FIX ── */
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: 70vh;
+  flex: 1;
+}
+
+.modal {
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   3. TABLET / iPAD (768px – 1024px) — Icon-Rail Sidebar
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) and (min-width: 769px) {
+  :root { --sidebar-width: 60px; }
+
+  .sidebar {
+    width: 60px;
+    padding: 1rem 0.5rem;
+    align-items: center;
+    overflow: visible;
+  }
+  .sidebar .brand-name,
+  .sidebar .nav-label,
+  .sidebar .user-identity-block span,
+  .sidebar .user-account-name,
+  .sidebar .sidebar-bottom .text-muted,
+  .sidebar .signout-item span:not(.nav-icon) { display: none; }
+
+  .sidebar .brand { margin-bottom: 1.5rem; justify-content: center; gap: 0; }
+  .sidebar .brand-icon { font-size: 1.5rem; }
+  .sidebar .nav-item {
+    justify-content: center;
+    padding: 0.75rem;
+    gap: 0;
+    border-radius: 8px;
+    position: relative;
+  }
+  .sidebar .nav-item span:not(.nav-icon) { display: none; }
+  .sidebar .nav-item .nav-icon { font-size: 1.2rem; }
+  /* Tooltip on hover */
+  .sidebar .nav-item::after {
+    content: attr(data-label);
+    position: absolute;
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1e293b;
+    color: #f8fafc;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 2000;
+    border: 1px solid #334155;
+  }
+  .sidebar .nav-item:hover::after { opacity: 1; }
+  .sidebar .sidebar-top { padding: 12px 8px; }
+  .sidebar .sidebar-mid { padding: 8px 4px; }
+  .sidebar .sidebar-bottom { padding: 12px 8px; }
+
+  .main, .main-viewport { margin-left: 60px; }
+  #scroll-progress-container { left: 60px; }
+
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .team-grid { grid-template-columns: repeat(2, 1fr); }
+  .tournament-grid { grid-template-columns: repeat(2, 1fr); }
+  .board-medals-grid { grid-template-columns: repeat(2, 1fr); }
+  .history-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .header-rail-mid { display: none; }
+  .segmented-control-rail { overflow-x: auto; }
+  .tournament-header-rail { flex-wrap: wrap; gap: 8px; }
+
+  .broadcast-view { grid-template-columns: 1fr; }
+  .team-battle-grid { grid-template-columns: 1fr; gap: 16px; padding: 20px; }
+  .command-center-container { grid-template-columns: 60px 1fr; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   4. MOBILE (below 768px) — Bottom Nav + Stacked Layouts
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  :root { --sidebar-width: 0px; }
+
+  html { font-size: 14px; }
+
+  /* Hide desktop sidebar completely */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 280px;
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 5000;
+    padding: 1.5rem;
+  }
+  .sidebar.mobile-open { transform: translateX(0); }
+
+  /* Sidebar backdrop */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 4999;
+    backdrop-filter: blur(4px);
+  }
+  .sidebar-backdrop.active { display: block; }
+
+  /* Main viewport: full width, bottom padding for nav bar */
+  .main, .main-viewport {
+    margin-left: 0 !important;
+    padding-bottom: 72px; /* space for bottom nav */
+  }
+  .main-viewport {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  .content-viewport { padding: 1rem; }
+  .tournament-viewport-fill { padding: 12px; }
+  #scroll-progress-container { left: 0; }
+
+  /* ── Mobile Bottom Navigation Bar ── */
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 64px;
+    background: #1e293b;
+    border-top: 1px solid #334155;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 4000;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+  }
+  .mobile-bottom-nav .mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .mobile-bottom-nav .mobile-nav-btn .nav-icon { font-size: 1.3rem; }
+  .mobile-bottom-nav .mobile-nav-btn.active {
+    color: #81b64c;
+    background: rgba(129,182,76,0.08);
+  }
+
+  /* Hamburger trigger (injected by JS) */
+  .mobile-hamburger {
+    position: fixed;
+    top: 12px; left: 12px;
+    width: 40px; height: 40px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    color: #f8fafc;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 3000;
+  }
+
+  /* ── Typography scaling ── */
+  .header-page-title { font-size: 1.4rem; }
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.1rem; }
+
+  /* ── Tournament Header Rail: stack on mobile ── */
+  .tournament-header-rail {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 16px;
+    min-height: auto;
+    white-space: normal;
+  }
+  .header-rail-left { width: 100%; }
+  .header-rail-mid { width: 100%; justify-content: flex-start; }
+  .header-rail-right { width: 100%; justify-content: flex-end; flex-wrap: wrap; }
+  .segmented-control-rail { width: 100%; overflow-x: auto; }
+  .segmented-control-rail .segmented-item { flex: 1; text-align: center; min-width: 0; }
+  #tournament-header-actions { flex-wrap: wrap; }
+
+  /* ── Grids: single column ── */
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .team-grid { grid-template-columns: 1fr; }
+  .tournament-grid { grid-template-columns: 1fr; }
+  .board-medals-grid { grid-template-columns: 1fr; }
+  .history-grid { grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .form-grid { grid-template-columns: 1fr; gap: 1rem; }
+
+  /* ── Board Cards: stacked vertical layout ── */
+  .board-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+  .board-card .drag-handle { display: none; }
+  .board-card .board-badge { align-self: flex-start; }
+  .board-card .smart-input-group { width: 100%; }
+  .matchup-container {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .player, .player.right-align {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .player-info.align-end { text-align: left; }
+  .result-controls {
+    width: 100%;
+    margin: 0;
+    justify-content: space-between;
+  }
+  .res-btn { flex: 1; padding: 14px 0; font-size: 1rem; min-height: 48px; }
+
+  /* ── Team Match Rows: stacked ── */
+  .team-match-row {
+    display: flex !important;
+    flex-direction: column;
+    padding: 1rem;
+  }
+  .team-match-row td {
+    display: block;
+    width: 100%;
+    text-align: center !important;
+    padding: 0.5rem 0;
+    border: none;
+  }
+  .team-name-cell {
+    font-size: 1.1rem !important;
+    text-align: center !important;
+  }
+  .bp-score-cell {
+    width: 100%;
+    min-width: 100%;
+    font-size: 1.4rem;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+  }
+  .board-table td, .board-table th { padding: 0.5rem; font-size: 0.8rem; }
+
+  /* ── Tables: horizontal scroll ── */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .enterprise-table { min-width: 600px; }
+  .standings-premium-table { min-width: 500px; }
+  .roster-table { min-width: 500px; }
+
+  /* ── Modals: full-screen on mobile ── */
+  .modal-overlay { padding: 0.5rem; align-items: flex-end; }
+  .modal {
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 16px 16px 0 0;
+    width: 100%;
+  }
+  .modal-body {
+    max-height: 65vh;
+    padding: 1.25rem;
+  }
+  .modal-header { padding: 1rem 1.25rem; }
+  .modal-footer { padding: 1rem 1.25rem; }
+  .history-modal { width: 100%; max-width: 100%; }
+  .history-pop-up {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+    padding: 20px;
+    position: fixed;
+    bottom: 0; left: 0;
+    top: auto;
+    transform: none;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .roster-modal { max-width: 100% !important; }
+  .roster-analytics { flex-direction: column; gap: 1rem; }
+
+  /* ── Auth: full-width ── */
+  .auth-card { max-width: 100%; padding: 24px; border-radius: 16px; }
+
+  /* ── Intelligence cards ── */
+  .intelligence-card { border-radius: 12px; padding: 1.25rem; }
+  .intelligence-card:hover { transform: none; }
+  .board-row { grid-template-columns: 30px 1fr 80px 60px; gap: 0.5rem; font-size: 0.8rem; }
+
+  /* ── Dashboard ── */
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+  .user-identity-pill { display: none; }
+
+  /* ── Broadcast ── */
+  .broadcast-container { padding: 1rem; }
+  .broadcast-header h1 { font-size: 1.25rem; }
+  .broadcast-table td { padding: 0.75rem 0.5rem; font-size: 0.85rem; }
+  .broadcast-view { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
+  .hide-mobile { display: none; }
+
+  /* ── Team Battle: stack ── */
+  .team-battle-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+  .team-banner { padding: 16px; }
+  .team-score-big { font-size: 40px; }
+
+  /* ── Passport ── */
+  .passport-banner { height: 160px; padding: 20px; }
+  .id-avatar-wrap { width: 80px; height: 80px; }
+
+  /* ── Command Center ── */
+  .command-center-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .tactical-sidebar { display: none; }
+
+  /* ── Back-to-top ── */
+  #btn-back-to-top { bottom: 80px; right: 1rem; width: 40px; height: 40px; font-size: 1.1rem; }
+
+  /* ── Scrollbar: thinner on mobile ── */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+
+  /* ── Roster search ── */
+  .roster-toolbar { flex-direction: column; gap: 12px; }
+  .roster-search-input { width: 100%; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   5. SMALL PHONES (below 380px) — Extra density
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 380px) {
+  html { font-size: 12px; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .history-grid { grid-template-columns: 1fr; }
+  .card { padding: 1rem; }
+  .btn { height: 34px; font-size: 0.7rem; padding: 0 0.75rem; }
+  .modal-body { max-height: 60vh; }
+  .mobile-bottom-nav .mobile-nav-btn { font-size: 9px; padding: 6px 8px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   6. PRINT STYLES
+   ══════════════════════════════════════════════════════════════════ */
+@media print {
+  .sidebar, .mobile-bottom-nav, .mobile-hamburger,
+  .sidebar-backdrop, #btn-back-to-top, .no-print,
+  #scroll-progress-container { display: none !important; }
+  .main, .main-viewport { margin-left: 0 !important; padding: 0 !important; }
+  body { background: #fff; color: #000; }
+  .card { box-shadow: none; border: 1px solid #ccc; }
 }
